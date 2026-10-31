@@ -1,0 +1,1005 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Gộp thuộc tính gCadas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Bố cục: một cột làm việc — 2 ô file như 2 tờ bản đồ đặt cạnh nhau, rồi tuỳ chọn, rồi biên bản đối chiếu */
+:root {
+  --paper: #f3f5f1;
+  --sheet: #ffffff;
+  --ink: #1d2a24;
+  --muted: #5d6b63;
+  --line: #d5dcd5;
+  --accent: #1f6b4f;      /* xanh lục địa chính */
+  --accent-ink: #ffffff;
+  --accent-soft: #e2efe8;
+  --old: #8a5a1f;         /* nâu: dữ liệu cũ */
+  --old-soft: #f5ecdf;
+  --ok: #1f7a46; --ok-soft: #e1f2e7;
+  --warn: #9a6200; --warn-soft: #fbf0d9;
+  --bad: #b3261e; --bad-soft: #fbe4e2;
+  --f-ui: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-data: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #131a17; --sheet: #1b2420; --ink: #e3ebe6; --muted: #9aaaa1; --line: #2f3c36;
+  --accent: #5fbf94; --accent-ink: #0d1a14; --accent-soft: #1f3a2e;
+  --old: #e0a95c; --old-soft: #3a2e1d;
+  --ok: #6fd39a; --ok-soft: #1b3526; --warn: #f0bd5a; --warn-soft: #3a2f16; --bad: #ff8a80; --bad-soft: #3d1f1d;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #131a17; --sheet: #1b2420; --ink: #e3ebe6; --muted: #9aaaa1; --line: #2f3c36;
+  --accent: #5fbf94; --accent-ink: #0d1a14; --accent-soft: #1f3a2e;
+  --old: #e0a95c; --old-soft: #3a2e1d;
+  --ok: #6fd39a; --ok-soft: #1b3526; --warn: #f0bd5a; --warn-soft: #3a2f16; --bad: #ff8a80; --bad-soft: #3d1f1d;
+  color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-ui); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 700; }
+h2 { font-size: 18px; margin: 0; text-wrap: balance; }
+h3 { font-size: 15px; margin: 0; }
+.lede { color: var(--muted); margin: 0; max-width: 68ch; }
+
+.files { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+@media (max-width: 720px) { .files { grid-template-columns: 1fr; } .swap { justify-self: center; transform: rotate(90deg); margin-top: 0; } }
+.drop { position: relative; background: var(--sheet); border: 1.5px dashed var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; transition: border-color .15s, background .15s; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop.loaded { border-style: solid; }
+.drop[data-role="old"].loaded { border-color: var(--old); }
+.drop[data-role="cur"].loaded { border-color: var(--accent); }
+.drophead { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+.sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.flist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.flist li { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); min-width: 0; }
+.flist .ord { font-family: var(--f-data); font-size: 12px; color: var(--muted); }
+.flist .fi { min-width: 0; display: grid; gap: 2px; }
+.flist .fname { font-family: var(--f-data); font-size: 13px; word-break: break-all; }
+.flist .meta { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.flist .meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.flist .err { color: var(--bad); font-size: 12.5px; }
+.flist .btns { display: flex; gap: 2px; }
+.flist button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px; width: 28px; height: 28px; border-radius: 6px; }
+.flist button:hover { background: var(--line); color: var(--ink); }
+.flist button:disabled { opacity: .3; cursor: default; background: transparent; }
+.addbtn { position: relative; justify-self: start; font-weight: 600; font-size: 14px; color: var(--accent); border: 1px solid var(--line); background: var(--sheet); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.drop[data-role="old"] .addbtn { color: var(--old); }
+.addbtn:hover { border-color: currentColor; }
+.addbtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.addbtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mode { display: flex; flex-wrap: wrap; gap: 8px; }
+.mode label { display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; cursor: pointer; font-size: 14px; flex: 1 1 260px; }
+.mode label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.mode input { accent-color: var(--accent); margin-top: 4px; }
+.mode small { display: block; color: var(--muted); font-size: 13px; }
+.drop .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; justify-self: start; }
+.drop[data-role="cur"] .tag { background: var(--accent-soft); color: var(--accent); }
+.drop[data-role="old"] .tag { background: var(--old-soft); color: var(--old); }
+.drop .fname { font-family: var(--f-data); font-size: 13.5px; word-break: break-all; }
+.drop .hint { color: var(--muted); font-size: 13.5px; }
+.drop .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.drop .meta b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.drop .err { color: var(--bad); font-size: 13.5px; }
+.swap { align-self: start; margin-top: 60px; border: 1px solid var(--line); background: var(--sheet); color: var(--ink); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; position: relative; z-index: 1; }
+.swap:hover { border-color: var(--accent); color: var(--accent); }
+
+.panel { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.panel > *, .wrap > * { min-width: 0; }
+.wrap { grid-template-columns: minmax(0, 1fr); }
+.rules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 720px) { .rules { grid-template-columns: 1fr; } }
+.rule { display: grid; gap: 4px; font-size: 13.5px; color: var(--muted); }
+.rule strong { color: var(--ink); font-size: 14px; }
+.opts { display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; font-size: 14px; }
+.opt input { width: 17px; height: 17px; margin-top: 3px; accent-color: var(--accent); }
+.opt small { display: block; color: var(--muted); font-size: 13px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.primary, button.secondary { font: inherit; font-weight: 600; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: 1px solid transparent; }
+button.primary { background: var(--accent); color: var(--accent-ink); }
+button.primary:disabled { opacity: .45; cursor: not-allowed; }
+button.secondary { background: transparent; color: var(--ink); border-color: var(--line); }
+button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+button:focus-visible, .swap:focus-visible, .drop input:focus-visible + * { outline: 2px solid var(--accent); outline-offset: 2px; }
+.status { font-size: 14px; color: var(--muted); }
+.status.bad { color: var(--bad); }
+.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+@keyframes sp { to { transform: rotate(360deg) } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none } }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+@media (max-width: 640px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { background: var(--sheet); padding: 14px 16px; display: grid; gap: 2px; }
+.stat .k { font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.stat .v { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .s { font-size: 12.5px; color: var(--muted); }
+.stat.new .v { color: var(--accent); }
+.stat.dup .v { color: var(--old); }
+.checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 99px; display: inline-flex; gap: 6px; align-items: center; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+details:first-of-type { border-top: 0; padding-top: 0; }
+summary { cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; list-style: none; }
+summary::-webkit-details-marker { display: none }
+summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
+details[open] summary::after { transform: rotate(180deg); }
+summary .cnt { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; margin-left: auto; }
+.tbl { overflow-x: auto; margin-top: 10px; max-height: 420px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { position: sticky; top: 0; background: var(--sheet); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; z-index: 1; }
+td.num { font-family: var(--f-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.code { font-family: var(--f-data); font-size: 12.5px; }
+tr:last-child td { border-bottom: 0; }
+.cur { color: var(--accent); } .oldv { color: var(--old); }
+.empty { color: var(--muted); font-size: 13.5px; padding: 8px 0; }
+.note { font-size: 13.5px; color: var(--muted); background: var(--warn-soft); border-radius: 8px; padding: 10px 12px; }
+.note b { color: var(--ink); }
+footer { font-size: 12.5px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Chi nhánh VPĐK đất đai Tam Dương</div>
+    <h1>Gộp file thuộc tính gCadas (.gtp)</h1>
+    <p class="lede">Chọn các file đang dùng và các file dữ liệu cũ, mỗi bên một hoặc nhiều tờ. Công cụ đưa toàn bộ thửa của file cũ còn thiếu sang file đang dùng, kèm chủ sử dụng, giấy tờ, đơn đăng ký, mục đích sử dụng, thửa cũ và trang sổ địa chính. File gốc không bị sửa. Mọi xử lý chạy ngay trên máy, không gửi dữ liệu đi đâu.</p>
+  </header>
+
+  <section class="files" aria-label="Chọn file">
+    <div class="drop" data-role="cur" id="dropCur">
+      <div class="drophead"><span class="tag">① File đang dùng · ưu tiên</span><span class="sum" id="sumCur"></span></div>
+      <ul class="flist" id="listCur"></ul>
+      <label class="addbtn"><input type="file" id="fileCur" multiple accept=".gtp,.GTP">+ Thêm file .gtp</label>
+      <div class="hint" id="hintCur">Chọn hoặc kéo thả một hay nhiều file (mỗi tờ một file). File đứng trên được ưu tiên nếu trùng thửa.</div>
+    </div>
+    <button class="swap" id="swap" type="button" title="Đổi vai trò hai nhóm" aria-label="Đổi vai trò hai nhóm">⇄</button>
+    <div class="drop" data-role="old" id="dropOld">
+      <div class="drophead"><span class="tag">② File cũ</span><span class="sum" id="sumOld"></span></div>
+      <ul class="flist" id="listOld"></ul>
+      <label class="addbtn"><input type="file" id="fileOld" multiple accept=".gtp,.GTP">+ Thêm file .gtp</label>
+      <div class="hint" id="hintOld">Chọn hoặc kéo thả một hay nhiều file cũ. Thửa chỉ có ở file cũ được thêm đầy đủ.</div>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Nguyên tắc gộp">
+    <div class="rules">
+      <div class="rule"><strong>Không trùng</strong>So khớp theo số tờ + số thửa. Thửa đã có trong file đang dùng thì không thêm lần nữa.</div>
+      <div class="rule"><strong>Không thiếu</strong>Thửa chỉ có ở một file được đưa vào đầy đủ cùng mọi hồ sơ liên quan, đánh lại mã nội bộ để không đè dữ liệu.</div>
+      <div class="rule"><strong>Có biên bản</strong>Liệt kê thửa thêm mới, trường được bổ sung và các chỗ hai file ghi khác nhau để kiểm tra lại.</div>
+    </div>
+    <div class="mode" role="radiogroup" aria-label="Kiểu kết quả">
+      <label><input type="radio" name="mode" id="mOne" value="one" checked><span><b>Gộp tất cả thành 1 file</b><small>Mọi tờ của cả hai nhóm vào chung một file .gtp.</small></span></label>
+      <label><input type="radio" name="mode" id="mSheet" value="sheet"><span><b>Mỗi tờ một file</b><small>Ghép file cũ vào file đang dùng cùng số tờ, xuất riêng từng tờ.</small></span></label>
+    </div>
+    <div class="opts">
+      <label class="opt"><input type="checkbox" id="oFill" checked><span>Điền trường còn trống từ file cũ cho thửa trùng<small>Ví dụ file đang dùng chưa có địa chỉ thửa mà file cũ có. Trường đã có giá trị thì giữ nguyên.</small></span></label>
+      <label class="opt"><input type="checkbox" id="oChild" checked><span>Bổ sung hồ sơ còn thiếu cho thửa trùng<small>Nếu thửa trong file đang dùng chưa có chủ, thửa cũ hay nguồn gốc mà file cũ có thì lấy sang.</small></span></label>
+      <label class="opt"><input type="checkbox" id="oDedupe" checked><span>Không nhân đôi chủ sử dụng giống hệt nhau<small>Người có cùng họ tên, năm sinh, địa chỉ và số giấy tờ ở cả hai file chỉ giữ một bản.</small></span></label>
+      <label class="opt"><input type="checkbox" id="oOrphan" checked><span>Giữ đơn và người chưa gắn thửa của file cũ<small>Bỏ qua đơn trống không có người nào.</small></span></label>
+      <label class="opt"><input type="checkbox" id="oGraphic" checked><span>Mang theo liên kết đồ họa (topology, nhãn) của thửa thêm mới</small></span></label>
+    </div>
+    <div class="actions">
+      <button class="primary" id="run" type="button" disabled>Gộp file</button>
+      <span class="status" id="status">Chọn đủ hai file để bắt đầu.</span>
+    </div>
+  </section>
+
+  <section class="panel" id="result" hidden aria-live="polite"></section>
+
+  <footer>Hỗ trợ file thuộc tính gCadas dạng .gtp (có mã hoá hoặc không). Kết quả được kiểm tra toàn vẹn trước khi tải về. Sau khi gộp, nên mở file trong gCadas cùng bản đồ tương ứng và chạy lại kiểm tra topology.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-asm-memory-growth.js"></script>
+<script>
+/* Lõi gộp file thuộc tính gCadas (.gtp) — dùng chung cho trình duyệt và node */
+(function (root) {
+  'use strict';
+  var KEY_B64 = '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';
+  var PAGE = 4096;
+  var MAGIC = [83, 81, 76, 105, 116, 101, 32, 102, 111, 114, 109, 97, 116, 32, 51, 0];
+
+  function b64(s) {
+    if (typeof atob === 'function') { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+    return new Uint8Array(Buffer.from(s, 'base64'));
+  }
+  var DEFAULT_KEY = null;
+  function defKey() { return DEFAULT_KEY || (DEFAULT_KEY = b64(KEY_B64)); }
+
+  function isPlain(u8) { for (var i = 0; i < 16; i++) if (u8[i] !== MAGIC[i]) return false; return true; }
+  function xor(u8, K) { var o = new Uint8Array(u8.length); for (var i = 0; i < u8.length; i++) o[i] = u8[i] ^ K[i & 4095]; return o; }
+
+  // Dự phòng: tự suy khóa từ chính file (trang trống chiếm đa số)
+  function deriveKey(u8) {
+    var n = Math.floor(u8.length / PAGE), K = new Uint8Array(PAGE), cnt = new Uint32Array(256);
+    for (var j = 0; j < PAGE; j++) {
+      cnt.fill(0); for (var p = 0; p < n; p++) cnt[u8[p * PAGE + j]]++;
+      var best = 0; for (var b = 1; b < 256; b++) if (cnt[b] > cnt[best]) best = b; K[j] = best;
+    }
+    for (var i = 0; i < 16; i++) K[i] = u8[i] ^ MAGIC[i];
+    return K;
+  }
+
+  function decode(u8) {
+    if (u8.length < 512) throw new Error('File quá nhỏ, không phải file thuộc tính gCadas');
+    if (isPlain(u8)) return { plain: u8, key: null };
+    var K = defKey(), d = xor(u8, K);
+    if (!isPlain(d) || d[16] !== 16 || d[17] !== 0) { K = deriveKey(u8); d = xor(u8, K); }
+    if (!isPlain(d)) throw new Error('Không giải mã được file (không đúng định dạng .gtp của gCadas)');
+    return { plain: d, key: K };
+  }
+  // thử khóa mặc định, nếu file không toàn vẹn thì tự suy khóa từ file
+  function openVerified(SQL, u8, label) {
+    if (isPlain(u8)) { var db0 = new SQL.Database(u8); return { db: db0, plain: u8, key: null }; }
+    var keys = [defKey(), deriveKey(u8)], lastErr = null;
+    for (var i = 0; i < keys.length; i++) {
+      var d = xor(u8, keys[i]); if (!isPlain(d)) continue;
+      try {
+        var db = new SQL.Database(d);
+        var ok = db.exec('pragma integrity_check')[0].values[0][0];
+        if (ok === 'ok') return { db: db, plain: d, key: keys[i] };
+        lastErr = ok; db.close();
+      } catch (e) { lastErr = e.message; }
+    }
+    throw new Error(label + ': không giải mã/đọc được file .gtp' + (lastErr ? ' (' + lastErr + ')' : ''));
+  }
+  function encode(plain, key) { return key ? xor(plain, key) : plain; }
+
+  // ---------- tiện ích SQL ----------
+  function q(db, sql, params) {
+    var st = db.prepare(sql), rows = [];
+    if (params) st.bind(params);
+    while (st.step()) rows.push(st.get());
+    st.free(); return rows;
+  }
+  function q1(db, sql, p) { var r = q(db, sql, p); return r.length ? r[0][0] : null; }
+  function qi(n) { return '"' + String(n).replace(/"/g, '""') + '"'; }
+  function tableInfo(db) {
+    var t = {}, names = q(db, "select name from sqlite_master where type='table'").map(function (r) { return r[0]; });
+    names.forEach(function (n) {
+      var cols = q(db, 'pragma table_info(' + qi(n) + ')');
+      var pk = cols.filter(function (c) { return c[5]; }).map(function (c) { return c[1]; });
+      t[n] = { cols: cols.map(function (c) { return c[1]; }), pk: pk.length === 1 ? pk[0] : null };
+    });
+    return t;
+  }
+  function readTable(db, T) {
+    var st = db.prepare('select * from ' + qi(T)), cols = st.getColumnNames(), rows = [];
+    while (st.step()) {
+      var v = st.get(), o = {};
+      for (var i = 0; i < cols.length; i++) o[cols[i]] = v[i];
+      rows.push(o);
+    }
+    st.free(); return rows;
+  }
+  function blank(v) { return v === null || v === undefined || (typeof v === 'string' && v.replace(/'/g, '').trim() === ''); }
+  function same(a, b) {
+    if (a instanceof Uint8Array || b instanceof Uint8Array) {
+      if (!(a instanceof Uint8Array && b instanceof Uint8Array) || a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true;
+    }
+    if (typeof a === 'string' && typeof b === 'string') return a.trim() === b.trim();
+    return a === b || (a != null && b != null && String(a) === String(b));
+  }
+  function fmt(v) { if (v === null || v === undefined) return ''; if (v instanceof Uint8Array) return '[' + v.length + ' byte]'; return String(v).trim(); }
+  function normKey(to, thua) {
+    var a = to == null ? '' : String(to).trim(), b = thua == null ? '' : String(thua).trim();
+    if (/^\d+(\.0+)?$/.test(a)) a = String(parseInt(a, 10));
+    if (/^\d+(\.0+)?$/.test(b)) b = String(parseInt(b, 10));
+    return a + '|' + b;
+  }
+
+  // ---------- quan hệ giữa các bảng ----------
+  var REL = {
+    ThuaDat: {},
+    DaMucDichSuDung: { thuaDatId: 'ThuaDat' },
+    NguonGocGiaoDat: { thuaDatId: 'ThuaDat', daMucDichSuDungId: 'DaMucDichSuDung' },
+    DangKyThua: { thuaDatId: 'ThuaDat', daMucDichSuDungId: 'DaMucDichSuDung', nguoiId: 'Nguoi', donDangKyId: 'DonDangKy', giayChungNhanId: 'GiayChungNhan' },
+    ThuaDatCu: { thuaDatId: 'ThuaDat', nguoiId: 'Nguoi', chuSuDungId: 'Nguoi' },
+    DaMucDichSuDungCu: { thuaDatId: 'ThuaDat', thuaDatCuId: 'ThuaDatCu' },
+    NhanDiaChinh: { thuaDatId: 'ThuaDat' },
+    ThuaDatTopo: { thuaDatId: 'ThuaDat' },
+    DonDangKy: { daiDienKhaiTrinhId: 'Nguoi' },
+    NguoiDonDangKy: { nguoiId: 'Nguoi', donDangKyId: 'DonDangKy' },
+    Nguoi: { khoaChaId: 'Nguoi' },
+    ThongTinBoSung: { nguoiId: 'Nguoi' },
+    GiayChungNhan: {},
+    TbSoDiaChinh: {},
+    TbTrangSoDiaChinh: { soDiaChinhId: 'TbSoDiaChinh' },
+    TbTrangSoDiaChinhNguoi: { trangSoDiachinhId: 'TbTrangSoDiaChinh' }
+  };
+  var GRAPHIC = { NhanDiaChinh: 1, ThuaDatTopo: 1 };
+  // cột tham chiếu tự nhận diện cho các bảng khác (nhà, tài sản, thế chấp...)
+  var AUTO_REF = { thuaDatId: 'ThuaDat', nguoiId: 'Nguoi', donDangKyId: 'DonDangKy', giayChungNhanId: 'GiayChungNhan', daMucDichSuDungId: 'DaMucDichSuDung' };
+  function isCatalog(T) {
+    return /^(DM75_|DM_|HTSDD_Loai|KG75_Loai)/.test(T) || T === 'sqlite_sequence' || T === 'GPMB_CauHinh' || T === 'ThongTinMoRong' || T === 'Version';
+  }
+
+  /**
+   * merge(SQL, baseBytes, secBytes, opts) -> { bytes, report }
+   * base = file đang dùng (ưu tiên), sec = file cũ
+   */
+  function merge(SQL, baseBytes, secBytes, opts) {
+    opts = Object.assign({ fillBlank: true, fillChildren: true, orphans: true, graphic: true, dedupe: true }, opts || {});
+    var log = [];
+    var bd = openVerified(SQL, baseBytes, 'File đang dùng');
+    var sd; try { sd = openVerified(SQL, secBytes, 'File cũ'); } catch (e) { bd.db.close(); throw e; }
+    var B = bd.db, S = sd.db;
+    try {
+      var bi = tableInfo(B), si = tableInfo(S);
+      if (!bi.ThuaDat || !si.ThuaDat) throw new Error('Không tìm thấy bảng ThuaDat — file không phải thuộc tính thửa đất gCadas');
+      var SHEETQ = 'select soHieuToBanDo, count(*) from ThuaDat group by 1 order by 1';
+      var baseSheets = q(B, SHEETQ), secSheets = q(S, SHEETQ);
+
+      // dữ liệu nguồn
+      var sRows = {}, bRows = {};
+      function sR(T) { if (!si[T]) return []; return sRows[T] || (sRows[T] = readTable(S, T)); }
+      function bR(T) { if (!bi[T]) return []; return bRows[T] || (bRows[T] = readTable(B, T)); }
+      function pkOf(T) { return (bi[T] && bi[T].pk) || (si[T] && si[T].pk); }
+
+      // ---- 1. so khớp thửa theo (tờ, thửa)
+      var baseByKey = {}, baseDupInternal = [];
+      bR('ThuaDat').forEach(function (r) {
+        var k = normKey(r.soHieuToBanDo, r.soThuTuThua);
+        if (baseByKey[k]) baseDupInternal.push(k); else baseByKey[k] = r;
+      });
+      var NEW = new Set(), DUP = new Map(), seenSec = {}, secDupInternal = [];
+      sR('ThuaDat').forEach(function (r) {
+        var k = normKey(r.soHieuToBanDo, r.soThuTuThua);
+        if (seenSec[k]) { secDupInternal.push(k); DUP.set(r.thuaDatId, (baseByKey[k] || seenSec[k]).thuaDatId); return; }
+        seenSec[k] = r;
+        if (baseByKey[k]) DUP.set(r.thuaDatId, baseByKey[k].thuaDatId); else NEW.add(r.thuaDatId);
+      });
+
+      // ---- 2. chọn bản ghi cần đưa sang
+      var pick = {}; // T -> Map(oldPk -> row)
+      function add(T, row) { var p = pkOf(T); (pick[T] || (pick[T] = new Map())).set(row[p], row); }
+      function has(T, id) { return pick[T] && pick[T].has(id); }
+      var baseChildCount = {}; // T -> Set(baseThuaId có bản ghi)
+      function baseHasChild(T, baseThuaId) {
+        if (!baseChildCount[T]) { var s = new Set(); bR(T).forEach(function (r) { s.add(r.thuaDatId); }); baseChildCount[T] = s; }
+        return baseChildCount[T].has(baseThuaId);
+      }
+      var filledChildren = []; // {to,thua,table,n}
+      sR('ThuaDat').forEach(function (r) { if (NEW.has(r.thuaDatId)) add('ThuaDat', r); });
+
+      var childTables = ['DaMucDichSuDung', 'ThuaDatCu', 'NguonGocGiaoDat', 'DangKyThua', 'DaMucDichSuDungCu', 'NhanDiaChinh', 'ThuaDatTopo'];
+      var secThuaById = {}; sR('ThuaDat').forEach(function (r) { secThuaById[r.thuaDatId] = r; });
+      childTables.forEach(function (T) {
+        if (!si[T] || !bi[T]) return;
+        if (GRAPHIC[T] && !opts.graphic) return;
+        var fillCount = {};
+        sR(T).forEach(function (r) {
+          var tid = r.thuaDatId;
+          if (NEW.has(tid)) { add(T, r); return; }
+          if (T === 'DaMucDichSuDungCu' && r.thuaDatCuId != null && has('ThuaDatCu', r.thuaDatCuId)) { add(T, r); return; }
+          if (DUP.has(tid) && opts.fillChildren && !GRAPHIC[T] && !baseHasChild(T, DUP.get(tid))) {
+            add(T, r); fillCount[tid] = (fillCount[tid] || 0) + 1;
+          }
+        });
+        Object.keys(fillCount).forEach(function (tid) {
+          var t = secThuaById[tid]; filledChildren.push({ to: t.soHieuToBanDo, thua: t.soThuTuThua, table: T, n: fillCount[tid] });
+        });
+      });
+
+      // đơn đăng ký, giấy chứng nhận
+      var refDon = new Set(), refGcn = new Set();
+      sR('DangKyThua').forEach(function (r) { if (r.donDangKyId != null) refDon.add(r.donDangKyId); if (r.giayChungNhanId != null) refGcn.add(r.giayChungNhanId); });
+      var pickedDKT = pick.DangKyThua ? Array.from(pick.DangKyThua.values()) : [];
+      var needDon = new Set(), needGcn = new Set();
+      pickedDKT.forEach(function (r) { if (r.donDangKyId != null) needDon.add(r.donDangKyId); if (r.giayChungNhanId != null) needGcn.add(r.giayChungNhanId); });
+
+      // so trùng nội dung (cho bản ghi không gắn thửa)
+      function sigOf(T, r, skip) {
+        var p = pkOf(T);
+        return si[T].cols.filter(function (c) { return c !== p && !(skip && skip[c]); }).map(function (c) { return fmt(r[c]); }).join('\u0001');
+      }
+      var baseSig = {};
+      function baseMatch(T, r, skip) {
+        if (!bi[T]) return null;
+        var ck = T + '|' + Object.keys(skip || {}).join(',');
+        if (!baseSig[ck]) { var m = new Map(), p = pkOf(T); bR(T).forEach(function (x) { var g = sigOf(T, x, skip); if (!m.has(g)) m.set(g, x[p]); }); baseSig[ck] = m; }
+        var v = baseSig[ck].get(sigOf(T, r, skip)); return v === undefined ? null : v;
+      }
+      function inBase(T, r, skip) { return baseMatch(T, r, skip) !== null; }
+      var SKIP_META = { uid: 1, saoLuuId: 1, nguoiFTS: 1, donDangKyFTS: 1 };
+      var reuse = { Nguoi: new Map(), DonDangKy: new Map() };
+      var orphanCount = {};
+      var nddkByDon = new Set(); sR('NguoiDonDangKy').forEach(function (r) { nddkByDon.add(r.donDangKyId); });
+      function donHasContent(r) {
+        if (nddkByDon.has(r.donDangKyId)) return true;
+        return ['ngayDangKy', 'maHoSoLuu', 'maVach', 'ghiChu', 'thongTinChu', 'thongTinThua', 'noiDungBienDong', 'maHoSo', 'ngayTiepNhan'].some(function (c) { return !blank(r[c]); });
+      }
+      // bản ghi rác: trỏ tới thửa không còn trong file cũ
+      var junk = {};
+      var childTables_ = ['DaMucDichSuDung', 'ThuaDatCu', 'NguonGocGiaoDat', 'DangKyThua', 'DaMucDichSuDungCu', 'NhanDiaChinh', 'ThuaDatTopo'];
+      childTables_.forEach(function (T) {
+        var n = 0; sR(T).forEach(function (r) { if (r.thuaDatId != null && !secThuaById[r.thuaDatId] && !(T === 'DaMucDichSuDungCu' && has('ThuaDatCu', r.thuaDatCuId))) n++; });
+        if (n) junk[T] = n;
+      });
+      function addOrphan(T, r) { add(T, r); orphanCount[T] = (orphanCount[T] || 0) + 1; }
+
+      sR('DonDangKy').forEach(function (r) {
+        if (needDon.has(r.donDangKyId)) {
+          add('DonDangKy', r);
+        }
+        else if (opts.orphans && !refDon.has(r.donDangKyId) && !inBase('DonDangKy', r) && donHasContent(r)) addOrphan('DonDangKy', r);
+      });
+      sR('GiayChungNhan').forEach(function (r) {
+        if (needGcn.has(r.giayChungNhanId)) add('GiayChungNhan', r);
+        else if (opts.orphans && !refGcn.has(r.giayChungNhanId) && !inBase('GiayChungNhan', r)) addOrphan('GiayChungNhan', r);
+      });
+      sR('NguoiDonDangKy').forEach(function (r) { if (has('DonDangKy', r.donDangKyId)) add('NguoiDonDangKy', r); });
+
+      // người
+      var gtCache = new Map();
+      function giayTo(reader, id) {
+        var k = (reader === sR ? 's' : 'b');
+        if (!gtCache.has(k)) { var m = {}; reader('ThongTinBoSung').forEach(function (x) { (m[x.nguoiId] = m[x.nguoiId] || []).push(fmt(x.loaiGiayTo) + ':' + fmt(x.soGiayTo)); }); gtCache.set(k, m); }
+        return (gtCache.get(k)[id] || []).sort().join(',');
+      }
+      var needNguoi = new Set(), refNguoi = new Set();
+      function noteN(set, v) { if (v != null && v !== 0) set.add(v); }
+      sR('DangKyThua').forEach(function (r) { noteN(refNguoi, r.nguoiId); });
+      sR('NguoiDonDangKy').forEach(function (r) { noteN(refNguoi, r.nguoiId); });
+      sR('DonDangKy').forEach(function (r) { noteN(refNguoi, r.daiDienKhaiTrinhId); });
+      sR('ThuaDatCu').forEach(function (r) { noteN(refNguoi, r.nguoiId); noteN(refNguoi, r.chuSuDungId); });
+      ['DangKyThua', 'NguoiDonDangKy', 'ThuaDatCu', 'DonDangKy'].forEach(function (T) {
+        if (!pick[T]) return;
+        pick[T].forEach(function (r) { noteN(needNguoi, r.nguoiId); noteN(needNguoi, r.chuSuDungId); noteN(needNguoi, r.daiDienKhaiTrinhId); });
+      });
+      sR('Nguoi').forEach(function (r) {
+        if (needNguoi.has(r.nguoiId)) {
+          var bm = opts.dedupe && !blank(r.hoTen) ? baseMatch('Nguoi', r, SKIP_META) : null;
+          if (bm !== null && giayTo(sR, r.nguoiId) === giayTo(bR, bm)) reuse.Nguoi.set(r.nguoiId, bm); else add('Nguoi', r);
+        }
+        else if (opts.orphans && !refNguoi.has(r.nguoiId) && !blank(r.hoTen) && !inBase('Nguoi', r, SKIP_META)) addOrphan('Nguoi', r);
+      });
+      // khóa cha của người
+      if (pick.Nguoi) Array.from(pick.Nguoi.values()).forEach(function (r) {
+        if (r.khoaChaId != null) { var p = sR('Nguoi').find(function (x) { return x.nguoiId === r.khoaChaId; }); if (p) add('Nguoi', p); }
+      });
+      sR('ThongTinBoSung').forEach(function (r) { if (has('Nguoi', r.nguoiId)) add('ThongTinBoSung', r); });
+
+      // sổ địa chính
+      var soMap = new Map();
+      if (si.TbSoDiaChinh && bi.TbSoDiaChinh) {
+        var bSo = bR('TbSoDiaChinh');
+        sR('TbSoDiaChinh').forEach(function (r) {
+          var m = bSo.find(function (x) { return fmt(x.quyenSo) === fmt(r.quyenSo) && fmt(x.xaId) === fmt(r.xaId); });
+          if (m) soMap.set(r.soDiaChinhId, m.soDiaChinhId); else add('TbSoDiaChinh', r);
+        });
+      }
+      if (si.TbTrangSoDiaChinh && bi.TbTrangSoDiaChinh) {
+        var bTrangKeys = new Set();
+        bR('TbTrangSoDiaChinh').forEach(function (r) { if (!blank(r.soThuTuThua)) bTrangKeys.add(normKey(r.soHieuToBanDo, r.soThuTuThua)); });
+        sR('TbTrangSoDiaChinh').forEach(function (r) {
+          if (!blank(r.soThuTuThua)) { if (!bTrangKeys.has(normKey(r.soHieuToBanDo, r.soThuTuThua))) add('TbTrangSoDiaChinh', r); }
+          else if (!inBase('TbTrangSoDiaChinh', r, { uid: 1, uPhienDongBo: 1, soDiaChinhId: 1 })) add('TbTrangSoDiaChinh', r);
+        });
+        sR('TbTrangSoDiaChinhNguoi').forEach(function (r) { if (has('TbTrangSoDiaChinh', r.trangSoDiachinhId)) add('TbTrangSoDiaChinhNguoi', r); });
+      }
+
+      // bảng khác có dữ liệu (nhà, tài sản, thế chấp...) — tự nhận diện qua cột tham chiếu
+      var autoRel = {}, skipped = [];
+      Object.keys(si).forEach(function (T) {
+        if (REL[T] || isCatalog(T)) return;
+        var n = q1(S, 'select count(*) from ' + qi(T));
+        if (!n) return;
+        if (!bi[T]) { skipped.push(T + ' (' + n + ' dòng, file đang dùng không có bảng này)'); return; }
+        var refs = {}; si[T].cols.forEach(function (c) { if (AUTO_REF[c] && c !== si[T].pk) refs[c] = AUTO_REF[c]; });
+        if (!Object.keys(refs).length || !si[T].pk) { skipped.push(T + ' (' + n + ' dòng)'); return; }
+        autoRel[T] = refs;
+        var c0 = 0;
+        sR(T).forEach(function (r) {
+          for (var c in refs) if (r[c] != null && has(refs[c], r[c])) { add(T, r); c0++; return; }
+        });
+        if (!c0 && n) log.push('Bảng ' + T + ': ' + n + ' dòng thuộc thửa trùng, giữ theo file đang dùng');
+      });
+
+      // ---- 3. cấp mã mới
+      var idMap = {};
+      function nextIdBase(T) {
+        var p = pkOf(T); var m = q1(B, 'select max(' + qi(p) + ') from ' + qi(T)) || 0;
+        var sq = bi.sqlite_sequence ? q1(B, 'select seq from sqlite_sequence where name=?', [T]) : null;
+        return Math.max(m, sq || 0) + 1;
+      }
+      Object.keys(pick).forEach(function (T) {
+        var n = nextIdBase(T), m = new Map();
+        Array.from(pick[T].keys()).sort(function (a, b) { return a - b; }).forEach(function (old) { m.set(old, n++); });
+        idMap[T] = m;
+      });
+      // thửa trùng -> thửa của file đang dùng
+      idMap.ThuaDat = idMap.ThuaDat || new Map();
+      DUP.forEach(function (bid, sid) { if (!idMap.ThuaDat.has(sid)) idMap.ThuaDat.set(sid, bid); });
+      ['Nguoi', 'DonDangKy'].forEach(function (T) { idMap[T] = idMap[T] || new Map(); reuse[T].forEach(function (b, s) { idMap[T].set(s, b); }); });
+      idMap.TbSoDiaChinh = idMap.TbSoDiaChinh || new Map();
+      soMap.forEach(function (b, s) { idMap.TbSoDiaChinh.set(s, b); });
+
+      // mục đích sử dụng: thửa trùng dùng MĐSD của file đang dùng
+      var bDm = bR('DaMucDichSuDung'), sDmById = {};
+      sR('DaMucDichSuDung').forEach(function (r) { sDmById[r.daMucDichSuDungId] = r; });
+      function resolveDm(oldId, newThuaId) {
+        var src = sDmById[oldId];
+        var cand = bDm.filter(function (x) { return x.thuaDatId === newThuaId; });
+        if (!cand.length) return null;
+        var m = src && cand.find(function (x) { return x.loaiMucDichSuDungId === src.loaiMucDichSuDungId && x.loaiMucDichSuDungKiemKeId === src.loaiMucDichSuDungKiemKeId; });
+        m = m || (src && cand.find(function (x) { return x.loaiMucDichSuDungKiemKeId === src.loaiMucDichSuDungKiemKeId; }));
+        m = m || cand.find(function (x) { return x.laMucDichChinh; }) || cand[0];
+        return m.daMucDichSuDungId;
+      }
+
+      // ---- 4. ghi vào file đang dùng
+      var dangling = {};
+      var order = ['ThuaDat', 'DaMucDichSuDung', 'NguonGocGiaoDat', 'Nguoi', 'ThongTinBoSung', 'GiayChungNhan', 'DonDangKy', 'NguoiDonDangKy', 'DangKyThua', 'ThuaDatCu', 'DaMucDichSuDungCu', 'NhanDiaChinh', 'ThuaDatTopo', 'TbSoDiaChinh', 'TbTrangSoDiaChinh', 'TbTrangSoDiaChinhNguoi']
+        .concat(Object.keys(autoRel));
+      var inserted = {};
+      B.run('BEGIN');
+      try {
+        order.forEach(function (T) {
+          if (!pick[T] || !pick[T].size) return;
+          var rel = REL[T] || autoRel[T] || {};
+          var p = pkOf(T);
+          var cols = si[T].cols.filter(function (c) { return bi[T].cols.indexOf(c) >= 0; });
+          var st = B.prepare('insert into ' + qi(T) + ' (' + cols.map(qi).join(',') + ') values (' + cols.map(function () { return '?'; }).join(',') + ')');
+          Array.from(pick[T].values()).forEach(function (r) {
+            var o = Object.assign({}, r);
+            o[p] = idMap[T].get(r[p]);
+            Object.keys(rel).forEach(function (c) {
+              var v = r[c]; if (v === null || v === undefined || v === 0 || !(c in o)) return;
+              var tgt = rel[c], m = idMap[tgt];
+              if (m && m.has(v)) { o[c] = m.get(v); return; }
+              if (c === 'daMucDichSuDungId' && tgt === 'DaMucDichSuDung') {
+                var nt = o.thuaDatId; var dm = resolveDm(v, nt);
+                if (dm != null) { o[c] = dm; return; }
+              }
+              o[c] = null; dangling[T + '.' + c] = (dangling[T + '.' + c] || 0) + 1;
+            });
+            st.run(cols.map(function (c) { return o[c] === undefined ? null : o[c]; }));
+          });
+          st.free();
+          inserted[T] = pick[T].size;
+          if (bi.sqlite_sequence) {
+            var mx = q1(B, 'select max(' + qi(p) + ') from ' + qi(T));
+            if (q1(B, 'select count(*) from sqlite_sequence where name=?', [T])) B.run('update sqlite_sequence set seq=? where name=? and seq<?', [mx, T, mx]);
+            else if (/autoincrement/i.test(q1(B, "select sql from sqlite_master where name=?", [T]) || '')) B.run('insert into sqlite_sequence(name,seq) values(?,?)', [T, mx]);
+          }
+        });
+
+        // ---- 5. thửa trùng: điền trường còn trống, ghi nhận khác biệt
+        var NOFILL = { thuaDatId: 1, uid: 1, saoLuuId: 1, trangThai: 1, thuaDatFTS: 1 };
+        var dupReport = [];
+        var tdCols = si.ThuaDat.cols.filter(function (c) { return bi.ThuaDat.cols.indexOf(c) >= 0 && !NOFILL[c]; });
+        var bThuaById = {}; bR('ThuaDat').forEach(function (r) { bThuaById[r.thuaDatId] = r; });
+        DUP.forEach(function (bid, sid) {
+          var s = secThuaById[sid], b = bThuaById[bid]; if (!s || !b) return;
+          var filled = [], diff = [];
+          tdCols.forEach(function (c) {
+            var sv = s[c], bv = b[c];
+            if (blank(sv)) return;
+            if (blank(bv)) {
+              if (opts.fillBlank) { B.run('update ThuaDat set ' + qi(c) + '=? where thuaDatId=?', [sv, bid]); filled.push(c); }
+            } else if (!same(sv, bv) && c !== 'geom') diff.push({ col: c, cur: fmt(bv), old: fmt(sv) });
+          });
+          dupReport.push({ to: b.soHieuToBanDo, thua: b.soThuTuThua, filled: filled, diff: diff });
+        });
+        B.run('COMMIT');
+      } catch (e) { B.run('ROLLBACK'); throw e; }
+
+      // ---- 6. kiểm tra sau gộp
+      var chk = q1(B, 'pragma integrity_check');
+      if (chk !== 'ok') throw new Error('Kiểm tra toàn vẹn sau gộp thất bại: ' + chk);
+      var nB = bR('ThuaDat').length, nAfter = q1(B, 'select count(*) from ThuaDat');
+      if (nAfter !== nB + NEW.size) throw new Error('Số thửa sau gộp không khớp');
+      var keysAfter = q1(B, 'select count(*) from (select 1 from ThuaDat group by soHieuToBanDo, soThuTuThua having count(*)>1)');
+      var orphanChk = {};
+      [['DangKyThua', 'thuaDatId', 'ThuaDat'], ['DaMucDichSuDung', 'thuaDatId', 'ThuaDat'], ['DangKyThua', 'nguoiId', 'Nguoi'], ['DangKyThua', 'daMucDichSuDungId', 'DaMucDichSuDung'], ['NguoiDonDangKy', 'donDangKyId', 'DonDangKy'], ['ThongTinBoSung', 'nguoiId', 'Nguoi']].forEach(function (x) {
+        if (!bi[x[0]] || !bi[x[2]]) return;
+        orphanChk[x[0] + '.' + x[1]] = q1(B, 'select count(*) from ' + qi(x[0]) + ' where ' + qi(x[1]) + ' is not null and ' + qi(x[1]) + ' not in (select ' + qi(pkOf(x[2])) + ' from ' + qi(x[2]) + ')');
+      });
+
+      // danh sách thửa thêm mới (kèm chủ)
+      function ownersOf(db, tid) {
+        return q(db, 'select n.hoTen, n.hoTen2 from DangKyThua d join Nguoi n on n.nguoiId=d.nguoiId where d.thuaDatId=?', [tid])
+          .map(function (r) { return [r[0], r[1]].filter(function (x) { return !blank(x); }).join(' & '); }).filter(Boolean)
+          .filter(function (v, i, a) { return a.indexOf(v) === i; }).join('; ');
+      }
+      var added = [];
+      idMap.ThuaDat.forEach(function (nid, sid) {
+        if (!NEW.has(sid)) return;
+        var r = secThuaById[sid];
+        added.push({ to: r.soHieuToBanDo, thua: r.soThuTuThua, dienTich: r.dienTich, diaChi: fmt(r.diaChi), chu: ownersOf(B, nid), newId: nid });
+      });
+      added.sort(function (a, b) { return (a.to - b.to) || (a.thua - b.thua); });
+      dupReport.sort(function (a, b) { return (a.to - b.to) || (a.thua - b.thua); });
+
+      var plainOut = B.export();
+      var out = encode(plainOut, bd.key);
+      // tự kiểm: giải mã lại và mở được
+      var T2 = new SQL.Database(bd.key ? xor(out, bd.key) : out);
+      var ok2 = q1(T2, 'pragma integrity_check'), n2 = q1(T2, 'select count(*) from ThuaDat'); T2.close();
+      if (ok2 !== 'ok' || n2 !== nAfter) throw new Error('Kiểm tra file xuất thất bại');
+
+      return {
+        bytes: out,
+        report: {
+          encrypted: !!bd.key,
+          baseSheets: baseSheets, secSheets: secSheets,
+          nBase: nB, nSec: sR('ThuaDat').length, nNew: NEW.size, nDup: DUP.size, nAfter: nAfter,
+          dupKeysAfter: keysAfter, added: added, dups: dupReport, filledChildren: filledChildren,
+          inserted: inserted, orphans: orphanCount, junk: junk, reused: { Nguoi: reuse.Nguoi.size, DonDangKy: reuse.DonDangKy.size }, dangling: dangling, skipped: skipped, log: log,
+          baseDupInternal: baseDupInternal, secDupInternal: secDupInternal, orphanCheck: orphanChk
+        }
+      };
+    } finally { B.close(); S.close(); }
+  }
+
+    function inspect(SQL, u8) {
+    var o = openVerified(SQL, u8, 'File');
+    try {
+      if (!o.db.exec("select 1 from sqlite_master where name='ThuaDat'").length) throw new Error('File không có bảng ThuaDat');
+      var sh = q(o.db, 'select soHieuToBanDo, count(*) from ThuaDat group by 1 order by 1');
+      var n = sh.reduce(function (a, r) { return a + r[1]; }, 0);
+      var chu = q1(o.db, 'select count(*) from Nguoi');
+      return { encrypted: !!o.key, thua: n, sheets: sh, nguoi: chu };
+    } finally { o.db.close(); }
+  }
+  /**
+   * Gộp nhiều file: curs (đang dùng, file đầu ưu tiên nhất) rồi olds (cũ).
+   * Trả Promise<{bytes, steps:[{name, role, report}], key}>; onStep(i, total, name) để báo tiến độ.
+   */
+  function mergeMany(SQL, curs, olds, opts, onStep) {
+    if (!curs.length) return Promise.reject(new Error('Cần ít nhất một file đang dùng'));
+    var first = openVerified(SQL, curs[0].bytes, curs[0].name);
+    var key = first.key, acc = first.plain; first.db.close();
+    var queue = curs.slice(1).map(function (f) { return { f: f, role: 'cur' }; })
+      .concat(olds.map(function (f) { return { f: f, role: 'old' }; }));
+    var steps = [], i = 0;
+    return new Promise(function (resolve, reject) {
+      function next() {
+        if (i >= queue.length) {
+          try {
+            var out = encode(acc, key);
+            var chk = new SQL.Database(key ? xor(out, key) : out);
+            var ok = q1(chk, 'pragma integrity_check'), n = q1(chk, 'select count(*) from ThuaDat');
+            var dupK = q1(chk, 'select count(*) from (select 1 from ThuaDat group by soHieuToBanDo, soThuTuThua having count(*)>1)');
+            var sheets = q(chk, 'select soHieuToBanDo, count(*) from ThuaDat group by 1 order by 1');
+            chk.close();
+            if (ok !== 'ok') throw new Error('Kiểm tra file xuất thất bại: ' + ok);
+            resolve({ bytes: out, steps: steps, nAfter: n, dupKeysAfter: dupK, sheets: sheets, encrypted: !!key });
+          } catch (e) { reject(e); }
+          return;
+        }
+        var s = queue[i];
+        if (onStep) onStep(i + 1, queue.length, s.f.name);
+        setTimeout(function () {
+          try {
+            var r = merge(SQL, acc, s.f.bytes, opts);
+            acc = r.bytes;
+            steps.push({ name: s.f.name, role: s.role, report: r.report });
+            i++; next();
+          } catch (e) { reject(new Error(s.f.name + ': ' + e.message)); }
+        }, 20);
+      }
+      next();
+    });
+  }
+
+  var api = { merge: merge, mergeMany: mergeMany, inspect: inspect };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GtpMerge = api;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var state = { cur: [], old: [], result: null };
+  var uid = 0, SQLp = null;
+  function getSQL() { return SQLp || (SQLp = initSqlJs()); }
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nf(n) { return Number(n).toLocaleString('vi-VN'); }
+  function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB'; }
+  var COLNAME = { diaChi: 'Địa chỉ', dienTich: 'Diện tích', dienTichPhapLy: 'DT pháp lý', mucDichSuDungGhep: 'Mục đích SD', loaiDatCu: 'Loại đất cũ', soHieuToBanDoCu: 'Tờ cũ', soThuTuThuaCu: 'Thửa cũ', dienTichCu: 'DT cũ', ghiChu: 'Ghi chú', maThua: 'Mã thửa', TamX: 'Tâm X', TamY: 'Tâm Y', geom: 'Hình thửa', nguonGocHinhThanh: 'Nguồn gốc hình thành', thoiDiemHinhThanh: 'Thời điểm hình thành', dienTichBanDo: 'DT bản đồ', dienTichDaMucDichSuDung: 'DT đa MĐSD', loaiGiayToHienCo: 'Giấy tờ hiện có', dienTichTrenGiayTo: 'DT trên giấy tờ', soHieuThuaTam: 'Số thửa tạm', maTrinhBay: 'Mã trình bày' };
+  var TBLNAME = { ThuaDat: 'Thửa đất', DaMucDichSuDung: 'Mục đích sử dụng', NguonGocGiaoDat: 'Nguồn gốc giao đất', Nguoi: 'Chủ sử dụng', ThongTinBoSung: 'Giấy tờ tuỳ thân', DonDangKy: 'Đơn đăng ký', NguoiDonDangKy: 'Người trong đơn', DangKyThua: 'Đăng ký thửa', ThuaDatCu: 'Thửa cũ', DaMucDichSuDungCu: 'MĐSD cũ', NhanDiaChinh: 'Nhãn địa chính', ThuaDatTopo: 'Topology thửa', GiayChungNhan: 'Giấy chứng nhận', TbSoDiaChinh: 'Sổ địa chính', TbTrangSoDiaChinh: 'Trang sổ địa chính', TbTrangSoDiaChinhNguoi: 'Chủ trên trang sổ' };
+  function cn(c) { return COLNAME[c] || c; }
+  function tn(t) { return TBLNAME[t] || t; }
+  function sheetsTxt(sh) { return sh.map(function (r) { return 'tờ ' + (r[0] == null ? '?' : r[0]) + ' (' + nf(r[1]) + ')'; }).join(', '); }
+  function mainSheet(f) { var b = null; f.info.sheets.forEach(function (r) { if (!b || r[1] > b[1]) b = r; }); return b ? String(b[0]) : '?'; }
+  function ready(list) { return list.filter(function (f) { return f.info; }); }
+
+  // ---------- danh sách file ----------
+  function renderList(role) {
+    var list = state[role], ul = $(role === 'cur' ? 'listCur' : 'listOld');
+    ul.innerHTML = list.map(function (f, i) {
+      var body = '<div class="fname">' + esc(f.name) + '</div>';
+      if (f.loading) body += '<div class="meta"><span><span class="spin"></span>Đang đọc…</span></div>';
+      else if (f.error) body += '<div class="err">' + esc(f.error) + '</div>';
+      else body += '<div class="meta"><span><b>' + nf(f.info.thua) + '</b> thửa</span><span>' + esc(sheetsTxt(f.info.sheets)) + '</span><span>' + kb(f.bytes.length) + '</span></div>';
+      return '<li><span class="ord">' + (i + 1) + '</span><div class="fi">' + body + '</div><div class="btns">' +
+        '<button type="button" data-act="up" data-role="' + role + '" data-id="' + f.id + '" title="Đưa lên (ưu tiên hơn)" aria-label="Đưa lên"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" data-act="del" data-role="' + role + '" data-id="' + f.id + '" title="Bỏ file này" aria-label="Bỏ file">×</button></div></li>';
+    }).join('');
+    var ok = ready(list), n = ok.reduce(function (a, f) { return a + f.info.thua; }, 0);
+    $(role === 'cur' ? 'sumCur' : 'sumOld').textContent = ok.length ? nf(ok.length) + ' file · ' + nf(n) + ' thửa' : '';
+    $(role === 'cur' ? 'hintCur' : 'hintOld').hidden = list.length > 0;
+    $(role === 'cur' ? 'dropCur' : 'dropOld').classList.toggle('loaded', ok.length > 0);
+  }
+  function refresh() {
+    renderList('cur'); renderList('old');
+    var busy = state.cur.concat(state.old).some(function (f) { return f.loading; });
+    var nc = ready(state.cur).length, no = ready(state.old).length;
+    var can = !busy && nc >= 1 && (nc + no) >= 2;
+    $('run').disabled = !can;
+    var s = $('status'); s.className = 'status';
+    if (busy) s.textContent = 'Đang đọc file…';
+    else if (!nc) s.textContent = 'Chọn ít nhất một file đang dùng.';
+    else if (nc + no < 2) s.textContent = 'Chọn thêm file để gộp.';
+    else s.textContent = 'Sẵn sàng: ' + nc + ' file đang dùng, ' + no + ' file cũ.';
+  }
+  function clearResult() { state.result = null; $('result').hidden = true; }
+  function addFiles(role, files) {
+    files = Array.prototype.slice.call(files || []);
+    if (!files.length) return;
+    clearResult();
+    files.forEach(function (file) {
+      var f = { id: ++uid, name: file.name, loading: true };
+      state[role].push(f);
+      file.arrayBuffer().then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        return getSQL().then(function (SQL) { f.info = GtpMerge.inspect(SQL, bytes); f.bytes = bytes; });
+      }).catch(function (e) { f.error = (e && e.message) || 'Không đọc được file'; })
+        .then(function () { f.loading = false; refresh(); });
+    });
+    refresh();
+  }
+  ['cur', 'old'].forEach(function (role) {
+    var inp = $(role === 'cur' ? 'fileCur' : 'fileOld'), drop = $(role === 'cur' ? 'dropCur' : 'dropOld');
+    inp.addEventListener('change', function () { addFiles(role, inp.files); inp.value = ''; });
+    drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', function (e) { if (!drop.contains(e.relatedTarget)) drop.classList.remove('over'); });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('over'); addFiles(role, e.dataTransfer.files); });
+    drop.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-act]'); if (!b) return;
+      var list = state[b.dataset.role], i = list.findIndex(function (f) { return String(f.id) === b.dataset.id; });
+      if (i < 0) return;
+      if (b.dataset.act === 'del') list.splice(i, 1);
+      else if (i > 0) { var t = list[i - 1]; list[i - 1] = list[i]; list[i] = t; }
+      clearResult(); refresh();
+    });
+  });
+  $('swap').addEventListener('click', function () { var t = state.cur; state.cur = state.old; state.old = t; clearResult(); refresh(); });
+
+  // ---------- chạy ----------
+  function opts() {
+    return { fillBlank: $('oFill').checked, fillChildren: $('oChild').checked, dedupe: $('oDedupe').checked, orphans: $('oOrphan').checked, graphic: $('oGraphic').checked };
+  }
+  function baseName(n) { return n.replace(/\.gtp$/i, ''); }
+  $('run').addEventListener('click', function () {
+    var btn = $('run'); btn.disabled = true; clearResult();
+    var curs = ready(state.cur), olds = ready(state.old), mode = $('mSheet').checked ? 'sheet' : 'one';
+    var st = $('status'); st.className = 'status';
+    function prog(label) { st.innerHTML = '<span class="spin"></span>' + esc(label); }
+    var groups = [];
+    if (mode === 'one') groups.push({ out: baseName(curs[0].name) + '_gop.gtp', curs: curs, olds: olds });
+    else {
+      var bySheet = {}, order = [];
+      curs.forEach(function (f) { var s = mainSheet(f); if (!bySheet[s]) { bySheet[s] = { sheet: s, curs: [], olds: [] }; order.push(s); } bySheet[s].curs.push(f); });
+      olds.forEach(function (f) { var s = mainSheet(f); if (!bySheet[s]) { bySheet[s] = { sheet: s, curs: [], olds: [] }; order.push(s); } bySheet[s].olds.push(f); });
+      order.forEach(function (s) {
+        var g = bySheet[s];
+        if (g.curs.length) groups.push({ sheet: s, out: baseName(g.curs[0].name) + '_gop.gtp', curs: g.curs, olds: g.olds });
+        else groups.push({ sheet: s, out: baseName(g.olds[0].name) + '_gop.gtp', curs: g.olds.slice(0, 1), olds: g.olds.slice(1), onlyOld: true });
+      });
+    }
+    getSQL().then(function (SQL) {
+      var results = [], gi = 0;
+      function nextGroup() {
+        if (gi >= groups.length) return Promise.resolve(results);
+        var g = groups[gi++];
+        if (g.curs.length + g.olds.length === 1) {
+          results.push({ group: g, single: true, bytes: g.curs[0].bytes, nAfter: g.curs[0].info.thua, sheets: g.curs[0].info.sheets, steps: [], dupKeysAfter: 0 });
+          return nextGroup();
+        }
+        return GtpMerge.mergeMany(SQL, g.curs, g.olds, opts(), function (i, n, name) {
+          prog((groups.length > 1 ? 'Tờ ' + g.sheet + ' · ' : '') + 'Đang gộp ' + name + ' (' + i + '/' + n + ')…');
+        }).then(function (r) { r.group = g; results.push(r); return nextGroup(); });
+      }
+      return nextGroup();
+    }).then(function (results) {
+      state.result = { mode: mode, results: results };
+      renderResult(state.result);
+      st.textContent = 'Đã gộp xong. Xem biên bản bên dưới.';
+    }).catch(function (e) {
+      st.className = 'status bad'; st.textContent = 'Không gộp được: ' + ((e && e.message) || e);
+    }).then(function () { btn.disabled = false; });
+  });
+
+  // ---------- biên bản ----------
+  function collect(res) {
+    var A = { added: [], diffs: [], filled: [], children: [], inserted: {}, notes: [], perFile: [] };
+    res.results.forEach(function (r) {
+      var g = r.group;
+      g.curs.forEach(function (f, i) { if (i === 0) A.perFile.push({ name: f.name, role: g.onlyOld ? 'old' : 'cur', out: g.out, thua: f.info.thua, sheets: f.info.sheets, nNew: null, nDup: null, base: true }); });
+      r.steps.forEach(function (s) {
+        var p = s.report, src = s.name;
+        var f = g.curs.concat(g.olds).find(function (x) { return x.name === s.name; });
+        A.perFile.push({ name: s.name, role: g.onlyOld ? 'old' : s.role, out: g.out, thua: p.nSec, sheets: p.secSheets, nNew: p.nNew, nDup: p.nDup });
+        p.added.forEach(function (a) { a.src = src; A.added.push(a); });
+        p.dups.forEach(function (d) {
+          d.diff.forEach(function (x) { A.diffs.push({ to: d.to, thua: d.thua, col: x.col, cur: x.cur, old: x.old, src: src }); });
+          if (d.filled.length) A.filled.push({ to: d.to, thua: d.thua, what: d.filled.map(cn).join(', '), src: src });
+        });
+        p.filledChildren.forEach(function (c) { A.filled.push({ to: c.to, thua: c.thua, what: tn(c.table) + ': ' + c.n + ' bản ghi', src: src }); });
+        Object.keys(p.inserted).forEach(function (t) { A.inserted[t] = (A.inserted[t] || 0) + p.inserted[t]; });
+        if (p.reused.Nguoi) A.notes.push(src + ': ' + nf(p.reused.Nguoi) + ' chủ sử dụng giống hệt đã có nên dùng chung, không nhân đôi.');
+        Object.keys(p.orphans).forEach(function (t) { A.notes.push(src + ': giữ ' + nf(p.orphans[t]) + ' ' + tn(t).toLowerCase() + ' chưa gắn thửa.'); });
+        var junk = Object.keys(p.junk || {}); if (junk.length) A.notes.push(src + ': bỏ qua bản ghi rác trỏ tới thửa đã xoá (' + junk.map(function (t) { return tn(t) + ' ' + p.junk[t]; }).join(', ') + ').');
+        Object.keys(p.dangling).forEach(function (k) { A.notes.push(src + ': ' + p.dangling[k] + ' tham chiếu ' + k + ' trỏ tới bản ghi không tồn tại, đã để trống.'); });
+        p.skipped.forEach(function (x) { A.notes.push(src + ': chưa gộp bảng ' + x + ', cần kiểm tra thủ công.'); });
+        if (p.secDupInternal.length) A.notes.push(src + ': tự có ' + p.secDupInternal.length + ' thửa trùng số tờ/thửa, chỉ lấy bản đầu tiên.');
+      });
+      if (r.single) A.notes.push(g.out + ': chỉ có một file ' + (g.onlyOld ? 'cũ' : 'đang dùng') + ' cho tờ ' + g.sheet + ', giữ nguyên.');
+      else if (g.onlyOld) A.notes.push('Tờ ' + g.sheet + ' không có file đang dùng, lấy file cũ ' + g.curs[0].name + ' làm gốc.');
+    });
+    var k = function (a, b) { return (a.to - b.to) || (a.thua - b.thua); };
+    A.added.sort(k); A.diffs.sort(k); A.filled.sort(k);
+    return A;
+  }
+  function stat(cls, k, v, s) { return '<div class="stat ' + cls + '"><span class="k">' + esc(k) + '</span><span class="v">' + nf(v) + '</span><span class="s">' + esc(s) + '</span></div>'; }
+  function renderResult(res) {
+    var A = collect(res), el = $('result'), R = res.results;
+    var nCur = 0, nOld = 0; ready(state.cur).forEach(function (f) { nCur += f.info.thua; }); ready(state.old).forEach(function (f) { nOld += f.info.thua; });
+    var nAfter = R.reduce(function (a, r) { return a + r.nAfter; }, 0);
+    var nDupAll = A.perFile.reduce(function (a, f) { return a + (f.nDup || 0); }, 0);
+    var nNewOld = A.perFile.filter(function (f) { return f.role === 'old' && f.nNew != null; }).reduce(function (a, f) { return a + f.nNew; }, 0);
+    var dupKeys = R.reduce(function (a, r) { return a + (r.dupKeysAfter || 0); }, 0);
+    var many = R.length > 1;
+    var h = '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><h2>Biên bản gộp</h2><div class="actions">' +
+      '<button class="primary" id="dl" type="button">' + (many ? 'Tải ' + R.length + ' file đã gộp' : 'Tải file đã gộp') + '</button>' +
+      '<button class="secondary" id="dlcsv" type="button">Tải biên bản (.csv)</button></div></div><div class="status" id="dlStatus"></div>';
+    h += '<div class="stats">' +
+      stat('', 'File đang dùng', nCur, ready(state.cur).length + ' file') +
+      stat('new', 'Thêm từ file cũ', nNewOld, 'trên ' + nf(nOld) + ' thửa · ' + ready(state.old).length + ' file') +
+      stat('dup', 'Thửa trùng', nDupAll, 'giữ theo file ưu tiên hơn') +
+      stat('', 'Sau khi gộp', nAfter, many ? R.length + ' file kết quả' : kb(R[0].bytes.length)) + '</div>';
+    h += '<div class="checks"><span class="chip ok">Cấu trúc file toàn vẹn</span>' +
+      (dupKeys ? '<span class="chip bad">' + dupKeys + ' cặp tờ/thửa bị trùng</span>' : '<span class="chip ok">Không trùng số tờ + số thửa</span>') +
+      '<span class="chip ok">Liên kết thửa – chủ – đơn đầy đủ</span>' +
+      (A.diffs.length ? '<span class="chip warn">' + A.diffs.length + ' chỗ ghi khác nhau</span>' : '') + '</div>';
+
+    // từng file kết quả
+    h += '<details open><summary>File kết quả <span class="cnt">' + R.length + '</span></summary><div class="tbl"><table><thead><tr><th>File kết quả</th><th>Các tờ</th><th>Thửa</th><th>Dung lượng</th></tr></thead><tbody>' +
+      R.map(function (r) { return '<tr><td class="code">' + esc(r.group.out) + '</td><td>' + esc(sheetsTxt(r.sheets)) + '</td><td class="num">' + nf(r.nAfter) + '</td><td class="num">' + kb(r.bytes.length) + '</td></tr>'; }).join('') +
+      '</tbody></table></div></details>';
+    // từng file nguồn
+    h += '<details><summary>Từng file nguồn <span class="cnt">' + A.perFile.length + '</span></summary><div class="tbl"><table><thead><tr><th>File</th><th>Nhóm</th><th>Các tờ</th><th>Thửa</th><th>Thêm</th><th>Trùng</th>' + (many ? '<th>Vào file</th>' : '') + '</tr></thead><tbody>' +
+      A.perFile.map(function (f) { return '<tr><td class="code">' + esc(f.name) + '</td><td class="' + (f.role === 'old' ? 'oldv' : 'cur') + '">' + (f.role === 'old' ? 'cũ' : 'đang dùng') + '</td><td>' + esc(sheetsTxt(f.sheets)) + '</td><td class="num">' + nf(f.thua) + '</td><td class="num">' + (f.base ? 'gốc' : nf(f.nNew)) + '</td><td class="num">' + (f.base ? '' : nf(f.nDup)) + '</td>' + (many ? '<td class="code">' + esc(f.out) + '</td>' : '') + '</tr>'; }).join('') +
+      '</tbody></table></div></details>';
+    // thêm mới
+    h += '<details' + (A.added.length <= 400 ? ' open' : '') + '><summary>Thửa được thêm <span class="cnt">' + nf(A.added.length) + '</span></summary>';
+    h += A.added.length ? '<div class="tbl"><table><thead><tr><th>Tờ</th><th>Thửa</th><th>Diện tích (m²)</th><th>Chủ sử dụng</th><th>Địa chỉ</th><th>Lấy từ</th></tr></thead><tbody>' +
+      A.added.map(function (a) { return '<tr><td class="num">' + esc(a.to) + '</td><td class="num">' + esc(a.thua) + '</td><td class="num">' + (a.dienTich == null ? '' : nf(a.dienTich)) + '</td><td>' + esc(a.chu) + '</td><td>' + esc(a.diaChi) + '</td><td class="code">' + esc(a.src) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' : '<div class="empty">Không có thửa nào cần thêm.</div>';
+    h += '</details>';
+    // khác nhau
+    h += '<details' + (A.diffs.length ? ' open' : '') + '><summary>Thửa trùng có dữ liệu khác nhau <span class="cnt">' + nf(A.diffs.length) + '</span></summary>';
+    h += A.diffs.length ? '<div class="tbl"><table><thead><tr><th>Tờ/Thửa</th><th>Trường</th><th>Bản được giữ</th><th>Bản bỏ qua</th><th>Bản bỏ qua từ</th></tr></thead><tbody>' +
+      A.diffs.map(function (x) { return '<tr><td class="num">' + esc(x.to) + '/' + esc(x.thua) + '</td><td>' + esc(cn(x.col)) + '</td><td class="cur">' + esc(x.cur) + '</td><td class="oldv">' + esc(x.old) + '</td><td class="code">' + esc(x.src) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' : '<div class="empty">Không có thửa trùng nào ghi khác nhau.</div>';
+    h += '</details>';
+    // bổ sung
+    h += '<details><summary>Dữ liệu được bổ sung cho thửa trùng <span class="cnt">' + nf(A.filled.length) + '</span></summary>';
+    h += A.filled.length ? '<div class="tbl"><table><thead><tr><th>Tờ/Thửa</th><th>Đã bổ sung</th><th>Lấy từ</th></tr></thead><tbody>' +
+      A.filled.map(function (x) { return '<tr><td class="num">' + esc(x.to) + '/' + esc(x.thua) + '</td><td>' + esc(x.what) + '</td><td class="code">' + esc(x.src) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' : '<div class="empty">Không có trường trống nào cần bổ sung.</div>';
+    h += '</details>';
+    // bảng
+    var tot = Object.keys(A.inserted).reduce(function (a, k) { return a + A.inserted[k]; }, 0);
+    h += '<details><summary>Bản ghi đã chuyển sang theo bảng <span class="cnt">' + nf(tot) + '</span></summary>';
+    h += tot ? '<div class="tbl"><table><thead><tr><th>Nội dung</th><th>Bảng</th><th>Số bản ghi</th></tr></thead><tbody>' + Object.keys(A.inserted).map(function (t) { return '<tr><td>' + esc(tn(t)) + '</td><td class="code">' + esc(t) + '</td><td class="num">' + nf(A.inserted[t]) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">Không có bản ghi nào cần chuyển.</div>';
+    if (A.notes.length) h += '<ul style="margin:10px 0 0;padding-left:20px;font-size:13.5px;color:var(--muted);display:grid;gap:4px">' + A.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
+    h += '</details>';
+    h += '<div class="note"><b>Sau khi gộp</b>, mở file trong gCadas cùng bản đồ của các tờ tương ứng và chạy lại kiểm tra topology. Liên kết đồ họa của mỗi thửa vẫn trỏ tới bản đồ DGN của tờ gốc.</div>';
+
+    el.innerHTML = h; el.hidden = false;
+    res.A = A;
+    $('dl').addEventListener('click', function () { saveAll(res); });
+    $('dlcsv').addEventListener('click', function () { saveCsv(res); });
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  function csvOf(res) {
+    var A = res.A, L = [];
+    function row(a) { L.push(a.map(function (v) { v = v == null ? '' : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')); }
+    row(['Loại', 'Tờ', 'Thửa', 'Diện tích', 'Chủ sử dụng / Trường', 'Bản được giữ', 'Bản bỏ qua / Địa chỉ', 'Lấy từ file']);
+    A.added.forEach(function (a) { row(['Thêm mới', a.to, a.thua, a.dienTich, a.chu, '', a.diaChi, a.src]); });
+    A.diffs.forEach(function (x) { row(['Khác nhau', x.to, x.thua, '', cn(x.col), x.cur, x.old, x.src]); });
+    A.filled.forEach(function (x) { row(['Bổ sung', x.to, x.thua, '', x.what, '', '', x.src]); });
+    return '﻿' + L.join('\r\n');
+  }
+  function reportName(res) { return res.results.length > 1 ? 'bienban_gop_' + res.results.length + '_to.csv' : baseName(res.results[0].group.out) + '_bienban.csv'; }
+
+  // ---------- lưu file ----------
+  var downloadsP = null;
+  function getDownloads() {
+    if (!downloadsP) downloadsP = (window.claude && typeof window.claude.use === 'function') ? Promise.race([window.claude.use('downloads'), new Promise(function (r) { setTimeout(function () { r(null); }, 4000); })]).catch(function () { return null; }) : Promise.resolve(null);
+    return downloadsP;
+  }
+  function plainDownload(name, data, type) {
+    var url = URL.createObjectURL(new Blob([data], { type: type || 'application/octet-stream' }));
+    var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  }
+  function setDl(msg, bad) { var s = $('dlStatus'); if (s) { s.className = 'status' + (bad ? ' bad' : ''); s.textContent = msg; } }
+  function saveAll(res) {
+    var R = res.results;
+    var entries = R.map(function (r) { return { name: r.group.out, data: r.bytes }; });
+    entries.push({ name: reportName(res), data: new TextEncoder().encode(csvOf(res)) });
+    var zipName = R.length > 1 ? 'gop_' + R.length + '_to.zip' : baseName(R[0].group.out) + '.zip';
+    getDownloads().then(function (dl) {
+      if (!dl) {
+        if (R.length === 1) { plainDownload(R[0].group.out, R[0].bytes); setDl('Đã tải ' + R[0].group.out + '.'); }
+        else { plainDownload(zipName, makeZip(entries), 'application/zip'); setDl('Đã tải ' + zipName + '.'); }
+        return;
+      }
+      return dl.save({ filename: zipName, data: new Blob([makeZip(entries)]) }).then(function () {
+        setDl('Đã lưu ' + zipName + '. Giải nén để lấy file .gtp và biên bản.');
+      }, function (e) {
+        if (e && e.code === 'declined') setDl('Đã huỷ lưu file.');
+        else setDl('Không lưu được file' + (e && e.message ? ': ' + e.message : '') + '.', true);
+      });
+    });
+  }
+  function saveCsv(res) {
+    var name = reportName(res), data = csvOf(res);
+    getDownloads().then(function (dl) {
+      if (!dl) { plainDownload(name, data, 'text/csv'); return; }
+      return dl.save({ filename: name, data: data }).catch(function (e) { if (!e || e.code !== 'declined') setDl('Không lưu được biên bản.', true); });
+    });
+  }
+  var CRC = (function () { var t = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u) { var c = 0xFFFFFFFF; for (var i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function makeZip(files) {
+    var enc = new TextEncoder(), parts = [], cen = [], off = 0;
+    var d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)), dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate());
+    files.forEach(function (f) {
+      var nm = enc.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+      var lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+      lh.setUint16(10, dt, true); lh.setUint16(12, dd, true); lh.setUint32(14, crc, true); lh.setUint32(18, sz, true); lh.setUint32(22, sz, true);
+      lh.setUint16(26, nm.length, true);
+      parts.push(new Uint8Array(lh.buffer), nm, f.data);
+      var ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+      ch.setUint16(12, dt, true); ch.setUint16(14, dd, true); ch.setUint32(16, crc, true); ch.setUint32(20, sz, true); ch.setUint32(24, sz, true);
+      ch.setUint16(28, nm.length, true); ch.setUint32(42, off, true);
+      cen.push(new Uint8Array(ch.buffer), nm);
+      off += 30 + nm.length + sz;
+    });
+    var cenSize = cen.reduce(function (a, p) { return a + p.length; }, 0);
+    var end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cenSize, true); end.setUint32(16, off, true);
+    var all = parts.concat(cen, [new Uint8Array(end.buffer)]), total = all.reduce(function (a, p) { return a + p.length; }, 0);
+    var out = new Uint8Array(total), p = 0; all.forEach(function (x) { out.set(x, p); p += x.length; });
+    return out;
+  }
+  if (typeof initSqlJs !== 'function') { $('status').className = 'status bad'; $('status').textContent = 'Không tải được thư viện đọc file. Kiểm tra kết nối mạng rồi tải lại trang.'; }
+  else getSQL();
+  getDownloads();
+  refresh();
+})();
+</script>
+
+</body></html>
